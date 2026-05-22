@@ -20,6 +20,7 @@ Technical Features,Methodology
 <b>Performance and Compression Metrics</b> - The data reduction percentage can be calculated via theoretical bit allocation or by evaluating physical disk footprints. Dropping the three least significant bit-planes yields an immediate theoretical data reduction of 37.5%,as visible in my project's output.
 
 -------------------------PART 2: COLOUR IMAGE COMPRESS------------------------
+
 Performing bit-plane slicing directly on individual Red, Green, and Blue channels introduces severe chromatic distortion. Because the human visual system is incredibly sensitive to variations in color ratios, dropping bits across RGB channels independently alters the color balance, resulting in muddy, posterized artifacts.
 
 This project resolves that limitation by converting the image into the HSI color space:
