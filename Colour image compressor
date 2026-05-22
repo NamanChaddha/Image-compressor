@@ -1,0 +1,84 @@
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+import os
+
+def rgb_to_hsi(rgb_array):
+    rgb = rgb_array.astype(np.float64) / 255.0
+    R, G, B = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+    I = (R+G+B)/3.0
+    min_rgb = np.minimum(np.minimum(R,G),B)
+    denominator =R+G+B
+    S = np.zeros_like(I)
+    nonzero_mask=denominator>0
+    S[nonzero_mask] = 1.0 - (3.0 / denominator[nonzero_mask]) * min_rgb[nonzero_mask]
+    
+    H = np.zeros_like(I)
+    num = 0.5 * ((R - G) + (R - B))
+    den = np.sqrt((R - G)**2 + (R - B)*(G - B))
+    
+    valid_mask = den > 0
+    idx = valid_mask
+    theta = np.arccos(np.clip(num[idx] / den[idx], -1.0, 1.0))
+    h_vals = np.degrees(theta)
+    b_greater_mask = B[idx] > G[idx]
+    h_vals[b_greater_mask] = 360.0 - h_vals[b_greater_mask]
+    H[idx] = h_vals
+    
+    return H, S, I
+
+def hsi_to_rgb(H, S, I):
+    H_rad = np.radians(H)
+    R = np.zeros_like(H)
+    G = np.zeros_like(H)
+    B = np.zeros_like(H)
+    
+    sec1 = (H >= 0) & (H < 120)
+    B[sec1] = I[sec1] * (1.0 - S[sec1])
+    R[sec1] = I[sec1] * (1.0 + (S[sec1] * np.cos(H_rad[sec1])) / np.cos(np.radians(60) - H_rad[sec1]))
+    G[sec1] = 3.0 * I[sec1] - (R[sec1] + B[sec1])
+    
+    sec2 = (H >= 120) & (H < 240)
+    H_shifted = H_rad[sec2] - np.radians(120)
+    R[sec2] = I[sec2] * (1.0 - S[sec2])
+    G[sec2] = I[sec2] * (1.0 + (S[sec2] * np.cos(H_shifted)) / np.cos(np.radians(60) - H_shifted))
+    B[sec2] = 3.0 * I[sec2] - (R[sec2] + G[sec2])
+    
+    sec3 = (H >= 240) & (H <= 360)
+    H_shifted = H_rad[sec3] - np.radians(240)
+    G[sec3] = I[sec3] * (1.0 - S[sec3])
+    B[sec3] = I[sec3] * (1.0 + (S[sec3] * np.cos(H_shifted)) / np.cos(np.radians(60) - H_shifted))
+    R[sec3] = 3.0 * I[sec3] - (G[sec3] + B[sec3])
+    
+    rgb_output = np.stack([R, G, B], axis=-1)
+    rgb_output = np.clip(rgb_output * 255.0, 0, 255).astype(np.uint8)
+    return rgb_output
+
+img = Image.open("rgb_img.jpg").convert("RGB")
+img_array = np.array(img)
+H, S, I = rgb_to_hsi(img_array)
+I_8bit = (I * 255).astype(np.uint8)
+bit_planes = []
+for i in range(8):
+    mask = 2 ** i
+    plane = (I_8bit & mask) > 0
+    bit_planes.append(plane)
+I_compressed_8bit = sum(bit_planes[i] * (2**i) for i in range(3, 8)).astype(np.uint8)
+I_compressed = I_compressed_8bit.astype(np.float64) / 255.0
+compressed_rgb_array = hsi_to_rgb(H, S, I_compressed)
+compressed_image = Image.fromarray(compressed_rgb_array)
+compressed_image.save("hsi_compressed_output.png", optimize=True, compress_level=9)
+bit_reduction = (3/8) * 100
+print(f"Intensity channel data reduced by: {bit_reduction:.1f}%")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+axes[0].imshow(img_array)
+axes[0].set_title("Original RGB Image")
+axes[0].axis('off')
+
+axes[1].imshow(compressed_rgb_array)
+axes[1].set_title(f"HSI Compressed Image\n(Intensity Reduced by {bit_reduction:.1f}%)")
+axes[1].axis('off')
+
+plt.tight_layout()
+plt.show()
