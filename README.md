@@ -1,6 +1,7 @@
 # Image-compressor
 This project compresses any image over 40% 
 
+-----------------------PART 1 : GRAYSCALE IMAGE COMPRESS----------------------
 
 It demonstrates low-level binary data manipulation, image matrix decomposition, and structural information analysis at the bit level without relying on heavy external digital image processing frameworks. In an 8-bit grayscale image, each pixel intensity is represented by an integer ranging from 0 to 255 (2^0 to 2^7).
 
@@ -17,3 +18,13 @@ Technical Features,Methodology
 2. Variable-Threshold Lossy Reconstruction - Reconstruction is achieved by scaling the active boolean matrices back to their respective base-2 weights and computing their summation. Discarding the $k$ lowest bit-planes yields a predictable, hardcoded mathematical data reduction before file-level encoding takes place.
 
 <b>Performance and Compression Metrics</b> - The data reduction percentage can be calculated via theoretical bit allocation or by evaluating physical disk footprints. Dropping the three least significant bit-planes yields an immediate theoretical data reduction of 37.5%,as visible in my project's output.
+
+---------------------------------------PART 2 COLOUR IMAGE COMPRESS----------------------------------------
+
+Performing bit-plane slicing directly on individual Red, Green, and Blue channels introduces severe chromatic distortion. Because the human visual system is incredibly sensitive to variations in color ratios, dropping bits across RGB channels independently alters the color balance, resulting in muddy, posterized artifacts.
+
+This project resolves that limitation by converting the image into the HSI color space:
+* **Hue ($H$) and Saturation ($S$):** Kept completely intact to preserve 100% color fidelity.
+* **Intensity ($I$):** Isolate the grayscale structural profile to apply bit-plane decomposition, discarding low-order bits (noise) while retaining high-order structural elements (MSBs).
+
+Necessary steps were applied to convert RGB to HSI model, bit plane slicing was done to INTENSITY ONLY to reduce image size.
