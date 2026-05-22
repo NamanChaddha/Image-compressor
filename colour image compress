@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-
+ 
 def rgb_to_hsi(rgb_array):
     rgb = rgb_array.astype(np.float64) / 255.0
     R, G, B = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
